@@ -153,7 +153,7 @@ instance Monad (Eff effs) where
   E u q >>= k = E u (q |> k)
   {-# INLINE (>>=) #-}
 
-instance (MonadBase b m, LastMember m effs) => MonadBase b (Eff effs) where
+instance (Monad b, MonadBase b m, LastMember m effs) => MonadBase b (Eff effs) where
   liftBase = sendM . liftBase
   {-# INLINE liftBase #-}
 
