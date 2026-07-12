@@ -37,6 +37,7 @@ where
 import Control.Monad (forM, unless)
 import Control.Monad.Freer (send, Member, Eff)
 import Data.Char (toLower)
+import Data.Functor ((<&>))
 import Language.Haskell.TH
 import Prelude
 
@@ -77,7 +78,12 @@ genFreer makeSigs tcName = do
     >>= flip unless (fail "makeEffect requires FlexibleContexts to be enabled")
 
   reify tcName >>= \case
-    TyConI (DataD _ _ _ _ cons _) -> do
+    TyConI (DataD _ _ _ _ cons0 _) -> do
+      let cons = cons0 <&> \case
+            -- Turn record fields in to normal ones.
+            -- The generated functions use positional arguments anyway.
+            RecGadtC names fields ty -> GadtC names (map (\(_, b, t) -> (b, t)) fields) ty
+            con -> con
       sigs <- filter (const makeSigs) <$> mapM genSig cons
       decs <- mapM genDecl cons
       return $ sigs ++ decs
